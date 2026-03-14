@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Préstamos Musicala</title>
+  <meta
+    name="description"
+    content="Registro rápido de préstamos y devoluciones de herramientas en Musicala."
+  />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="color-scheme" content="light only" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="icon" href="./logo.png" />
+  <link rel="apple-touch-icon" href="./logo.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-logo-wrap">
+          <img src="./logo.png" alt="Logo Musicala" class="brand-logo" />
+        </div>
+
+        <div class="brand-copy">
+          <p class="eyebrow">Musicala</p>
+          <h1>Préstamos de herramientas</h1>
+          <p class="brand-subtitle">
+            Registro rápido de préstamos y devoluciones para docentes, equipo interno o terceros.
+          </p>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="btnOpenCatalogs" class="btn btn-secondary" type="button">
+          Gestionar listas
+        </button>
+        <button id="btnExportJson" class="btn btn-secondary" type="button">
+          Exportar JSON
+        </button>
+        <button id="btnExportCsv" class="btn btn-secondary" type="button">
+          Exportar CSV
+        </button>
+        <label class="btn btn-ghost file-btn" for="importFile">
+          Importar respaldo
+        </label>
+        <input id="importFile" type="file" accept=".json,application/json" hidden />
+      </div>
+    </header>
+
+    <main class="main-layout">
+      <section class="panel panel-form">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Nuevo registro</p>
+            <h2>Registrar préstamo</h2>
+          </div>
+          <div class="panel-head-actions">
+            <span class="pill pill-info">Guardado local</span>
+          </div>
+        </div>
+
+        <form id="loanForm" class="form-grid" autocomplete="off">
+          <div class="field">
+            <label for="personType">Tipo de persona</label>
+            <select id="personType" name="personType" required>
+              <option value="">Selecciona una opción</option>
+              <option value="Docente">Docente</option>
+              <option value="Equipo interno">Equipo interno</option>
+              <option value="Tercero">Tercero</option>
+            </select>
+          </div>
+
+          <div class="field field-span-2">
+            <label for="personName">Persona</label>
+            <div class="field-inline">
+              <select id="personName" name="personName" required>
+                <option value="">Selecciona una persona</option>
+              </select>
+              <button type="button" class="btn btn-ghost btn-inline" id="btnQuickAddPerson">
+                + Persona
+              </button>
+            </div>
+            <small class="field-hint">
+              Usa una persona guardada o agrega una nueva desde “Gestionar listas”.
+            </small>
+          </div>
+
+          <div class="field">
+            <label for="itemCategory">Categoría</label>
+            <div class="field-inline">
+              <select id="itemCategory" name="itemCategory" required>
+                <option value="">Selecciona una categoría</option>
+              </select>
+              <button type="button" class="btn btn-ghost btn-inline" id="btnQuickAddCategory">
+                + Categoría
+              </button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="itemName">Elemento</label>
+            <div class="field-inline">
+              <select id="itemName" name="itemName" required>
+                <option value="">Selecciona un elemento</option>
+              </select>
+              <button type="button" class="btn btn-ghost btn-inline" id="btnQuickAddItem">
+                + Elemento
+              </button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="quantity">Cantidad</label>
+            <input
+              id="quantity"
+              name="quantity"
+              type="number"
+              min="1"
+              step="1"
+              value="1"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="loanStatus">Estado inicial</label>
+            <input
+              id="loanStatus"
+              name="loanStatus"
+              type="text"
+              value="Prestado"
+              disabled
+            />
+          </div>
+
+          <div class="field field-span-2">
+            <label for="loanNotes">Notas del préstamo</label>
+            <textarea
+              id="loanNotes"
+              name="loanNotes"
+              rows="4"
+              placeholder="Ej. Se entrega con estuche, tiene rayón leve, incluye adaptador..."
+            ></textarea>
+          </div>
+
+          <div class="form-actions field-span-2">
+            <button type="submit" class="btn btn-primary">
+              Guardar préstamo
+            </button>
+            <button type="reset" id="btnClearForm" class="btn btn-ghost">
+              Limpiar
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel panel-summary">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Resumen</p>
+            <h2>Estado actual</h2>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span class="stat-label">Prestados</span>
+            <strong id="statActive">0</strong>
+            <small>Pendientes por devolver</small>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-label">Devueltos</span>
+            <strong id="statReturned">0</strong>
+            <small>Registros finalizados</small>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-label">Con novedad</span>
+            <strong id="statIssues">0</strong>
+            <small>Daño, observación o faltante</small>
+          </article>
+        </div>
+
+        <div class="quick-notes">
+          <h3>Tips rápidos</h3>
+          <ul>
+            <li>Registra siempre quién recibió el elemento.</li>
+            <li>Si el elemento vuelve con daño o faltantes, déjalo anotado en devolución.</li>
+            <li>Haz respaldo en JSON de vez en cuando, porque el navegador no es un archivo histórico serio.</li>
+          </ul>
+        </div>
+
+        <div class="mini-catalog-status">
+          <h3>Listas guardadas</h3>
+          <div class="mini-stats-grid">
+            <article class="mini-stat-card">
+              <span>Personas</span>
+              <strong id="statCatalogPeople">0</strong>
+            </article>
+            <article class="mini-stat-card">
+              <span>Categorías</span>
+              <strong id="statCatalogCategories">0</strong>
+            </article>
+            <article class="mini-stat-card">
+              <span>Elementos</span>
+              <strong id="statCatalogItems">0</strong>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <section class="panel panel-tabs">
+      <div class="tabs-header">
+        <div class="tabs-nav" role="tablist" aria-label="Secciones de préstamos">
+          <button
+            id="tabBtnActive"
+            class="tab-btn is-active"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panelActive"
+          >
+            Activos
+          </button>
+
+          <button
+            id="tabBtnHistory"
+            class="tab-btn"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panelHistory"
+          >
+            Historial
+          </button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-box">
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Buscar por persona, categoría, elemento o nota..."
+              aria-label="Buscar registros"
+            />
+          </div>
+
+          <select id="filterType" aria-label="Filtrar por tipo de persona">
+            <option value="Todos">Todos</option>
+            <option value="Docente">Docente</option>
+            <option value="Equipo interno">Equipo interno</option>
+            <option value="Tercero">Tercero</option>
+          </select>
+
+          <select id="filterCategory" aria-label="Filtrar por categoría">
+            <option value="Todos">Todas las categorías</option>
+          </select>
+
+          <select id="filterStatus" aria-label="Filtrar por estado">
+            <option value="Todos">Todos los estados</option>
+            <option value="Prestado">Prestado</option>
+            <option value="Devuelto">Devuelto</option>
+            <option value="Con novedad">Con novedad</option>
+          </select>
+        </div>
+      </div>
+
+      <div
+        id="panelActive"
+        class="tab-panel is-active"
+        role="tabpanel"
+        aria-labelledby="tabBtnActive"
+      >
+        <div class="panel-head panel-head-inline">
+          <div>
+            <p class="section-kicker">Pendientes</p>
+            <h2>Préstamos activos</h2>
+          </div>
+        </div>
+
+        <div id="activeList" class="cards-list empty-state-host">
+          <article class="empty-state">
+            <h3>No hay préstamos activos</h3>
+            <p>
+              Cuando registres un préstamo aparecerá aquí para poder marcar su devolución.
+            </p>
+          </article>
+        </div>
+      </div>
+
+      <div
+        id="panelHistory"
+        class="tab-panel"
+        role="tabpanel"
+        aria-labelledby="tabBtnHistory"
+        hidden
+      >
+        <div class="panel-head panel-head-inline">
+          <div>
+            <p class="section-kicker">Registro completo</p>
+            <h2>Historial de préstamos</h2>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Persona</th>
+                <th>Tipo</th>
+                <th>Categoría</th>
+                <th>Elemento</th>
+                <th>Cant.</th>
+                <th>Préstamo</th>
+                <th>Devolución</th>
+                <th>Estado</th>
+                <th>Notas</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr>
+                <td colspan="11">
+                  <div class="empty-state table-empty">
+                    <h3>Sin registros todavía</h3>
+                    <p>Los movimientos guardados aparecerán en esta tabla.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="returnModal" class="modal">
+    <form method="dialog" class="modal-card" id="returnForm">
+      <div class="modal-head">
+        <div>
+          <p class="section-kicker">Registrar devolución</p>
+          <h2>Confirmar regreso del elemento</h2>
+        </div>
+        <button
+          type="button"
+          class="icon-btn"
+          id="btnCloseModal"
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="returnLoanId" />
+
+        <div class="field">
+          <label for="returnCondition">Estado al devolver</label>
+          <select id="returnCondition" required>
+            <option value="Devuelto">Bien</option>
+            <option value="Con novedad">Con novedad</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="returnNotes">Notas de devolución</label>
+          <textarea
+            id="returnNotes"
+            rows="4"
+            placeholder="Ej. Volvió completo, faltó cable, llegó con golpe, etc."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="btnCancelModal">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary">
+          Guardar devolución
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="catalogsModal" class="modal modal-lg">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-head">
+        <div>
+          <p class="section-kicker">Configuración rápida</p>
+          <h2>Gestionar listas</h2>
+        </div>
+        <button
+          type="button"
+          class="icon-btn"
+          id="btnCloseCatalogsModal"
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="catalogs-layout">
+        <section class="catalog-panel">
+          <div class="catalog-panel-head">
+            <div>
+              <p class="section-kicker">Catálogo</p>
+              <h3>Personas</h3>
+            </div>
+          </div>
+
+          <form id="personCatalogForm" class="mini-form" autocomplete="off">
+            <div class="field">
+              <label for="catalogPersonType">Tipo</label>
+              <select id="catalogPersonType" required>
+                <option value="">Selecciona tipo</option>
+                <option value="Docente">Docente</option>
+                <option value="Equipo interno">Equipo interno</option>
+                <option value="Tercero">Tercero</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="catalogPersonName">Nombre</label>
+              <input
+                id="catalogPersonName"
+                type="text"
+                placeholder="Ej. Laura Sánchez"
+                required
+              />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar persona</button>
+          </form>
+
+          <div id="peopleCatalogList" class="catalog-list">
+            <article class="empty-state small-empty">
+              <p>No hay personas guardadas.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="catalog-panel">
+          <div class="catalog-panel-head">
+            <div>
+              <p class="section-kicker">Catálogo</p>
+              <h3>Categorías</h3>
+            </div>
+          </div>
+
+          <form id="categoryCatalogForm" class="mini-form" autocomplete="off">
+            <div class="field">
+              <label for="catalogCategoryName">Nombre de categoría</label>
+              <input
+                id="catalogCategoryName"
+                type="text"
+                placeholder="Ej. Audio, Cables, Instrumentos..."
+                required
+              />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar categoría</button>
+          </form>
+
+          <div id="categoriesCatalogList" class="catalog-list">
+            <article class="empty-state small-empty">
+              <p>No hay categorías guardadas.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="catalog-panel">
+          <div class="catalog-panel-head">
+            <div>
+              <p class="section-kicker">Catálogo</p>
+              <h3>Elementos</h3>
+            </div>
+          </div>
+
+          <form id="itemCatalogForm" class="mini-form" autocomplete="off">
+            <div class="field">
+              <label for="catalogItemCategory">Categoría</label>
+              <select id="catalogItemCategory" required>
+                <option value="">Selecciona categoría</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="catalogItemName">Nombre del elemento</label>
+              <input
+                id="catalogItemName"
+                type="text"
+                placeholder="Ej. Micrófono inalámbrico"
+                required
+              />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar elemento</button>
+          </form>
+
+          <div id="itemsCatalogList" class="catalog-list">
+            <article class="empty-state small-empty">
+              <p>No hay elementos guardados.</p>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <template id="activeLoanCardTemplate">
+    <article class="loan-card">
+      <div class="loan-card-top">
+        <div>
+          <h3 class="loan-person"></h3>
+          <p class="loan-meta"></p>
+        </div>
+        <span class="pill loan-status"></span>
+      </div>
+
+      <div class="loan-card-body">
+        <p><strong>Categoría:</strong> <span class="loan-category"></span></p>
+        <p><strong>Elemento:</strong> <span class="loan-item"></span></p>
+        <p><strong>Cantidad:</strong> <span class="loan-qty"></span></p>
+        <p><strong>Fecha:</strong> <span class="loan-date"></span></p>
+        <p><strong>Notas:</strong> <span class="loan-notes"></span></p>
+      </div>
+
+      <div class="loan-card-actions">
+        <button type="button" class="btn btn-primary btn-return">
+          Marcar devolución
+        </button>
+      </div>
+    </article>
+  </template>
+
+  <template id="catalogChipTemplate">
+    <article class="catalog-chip">
+      <div class="catalog-chip-copy">
+        <strong class="catalog-chip-title"></strong>
+        <small class="catalog-chip-meta"></small>
+      </div>
+      <button type="button" class="icon-btn icon-btn-danger btn-delete-catalog-item" aria-label="Eliminar">
+        ×
+      </button>
+    </article>
+  </template>
+
+  <script src="./app.js"></script>
+</body>
+</html>
